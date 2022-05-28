@@ -9,33 +9,51 @@ struct STRYCT
 {
 	int i;
 	char c;
+	bool operator>(const STRYCT& obj);
+	bool operator<(const STRYCT& obj);
+	bool operator<=(const STRYCT& obj);
 };
 
+bool STRYCT::operator>(const STRYCT& obj)
+{
+	return i > obj.i || (i == obj.i && c > obj.c);
+}
+
+bool STRYCT::operator<(const STRYCT& obj)
+{
+	return i < obj.i || (i == obj.i && c < obj.c);
+}
+
+bool STRYCT::operator<=(const STRYCT& obj)
+{
+	return i < obj.i || (i == obj.i && c <= obj.c);
+}
+
 const int n = 6;
-const int count_of_elements = 1000;
+const int count_of_elements = 10;
 
 struct Sequence
 {
 	std::fstream file;
-	int elem;
+	STRYCT elem;
 	bool eof, eor;
 	void ReadNext()
 	{
 		eof = file.eof();
 		if (!eof)
 		{
-			file >> elem;
+			file.read((char*)&elem, sizeof(STRYCT));
 		}
 	}
 	void StartRead(std::string filename)
 	{
-		file.open(filename, std::ios::in);
+		file.open(filename, ios::binary | std::ios::in);
 		ReadNext();
 		eor = eof;
 	}
 	void StartWrite(std::string filename)
 	{
-		file.open(filename, std::ios::out);
+		file.open(filename, ios::binary | std::ios::out);
 	}
 
 	void Close()
@@ -48,7 +66,7 @@ struct Sequence
 		if (!x.file.eof())
 		{
 			elem = x.elem;
-			file << elem << ' ';
+			file.write((char*)&elem, sizeof(STRYCT));
 		}
 		x.ReadNext();
 		x.eor = x.eof || x.elem < elem;
@@ -68,7 +86,7 @@ struct Sequence
 		{
 			do
 			{
-				int elem1 = elem;
+				STRYCT elem1 = elem;
 				ReadNext();
 				eor = eof || elem < elem1;
 			} while (!eor);
@@ -82,16 +100,25 @@ struct Sequence
 
 void CreateFile_(std::string filename)
 {
-	std::ofstream file(filename);
+	std::ofstream file(filename, ios::binary);
 	srand(time(0));
-	for (int i = 0; i < count_of_elements; i++)
+	int i;
+	char c;
+	for (int j = 0; j < count_of_elements; ++j)
 	{
-		file << rand() % 201 - 100 << ' ';
+		i = rand() % 201 - 100;
+		c = rand() % ('Z' - 'A' + 1) + 'A';
+		STRYCT s;
+		s.i = i;
+		s.c = c;
+		file.write((char*)&s, sizeof(STRYCT));
+		cout << s.i << '[' << s.c << "] ";
 	}
+	cout << '\n';
 	file.close();
 }
 
-bool CheckFile(std::string filename)
+/*bool CheckFile(std::string filename)
 {
 	std::ifstream file(filename);
 	int x, y;
@@ -105,7 +132,7 @@ bool CheckFile(std::string filename)
 	}
 	file.close();
 	return check;
-}
+}*/
 
 
 //=======================================
@@ -180,7 +207,10 @@ void distribution(string name, fstream*& files, Sequence*& seqs, int* final_arr,
 	print_arr(a2, n);
 	if (sum_arr(a2, n - 1) == k)
 	{
-		copy(final_arr, a2, n);
+		for (int i = 0; i < n; i++)
+		{
+			final_arr[i] = 0;
+		}
 		for (int i = 0; i < n; i++)
 		{
 			int counter = 0;
@@ -213,7 +243,10 @@ void distribution(string name, fstream*& files, Sequence*& seqs, int* final_arr,
 			while (final_arr[i] != a2[i])
 			{
 				++final_arr[i];
-				seqs[i].file << INT_MAX << ' ';
+				STRYCT s;
+				s.i = INT_MAX;
+				s.c = 'Z';
+				seqs[i].file.write((char*)&s, sizeof(STRYCT));
 			}
 		}
 	}
@@ -287,10 +320,13 @@ void MergeOne(Sequence* seqs, int n, int* distribute, int* t)
 		distribute[i]--;
 	}
 
-	current.file.open("cur.txt", ios::in);
-	string s;
-	getline(current.file, s);
-	seqs[t[n - 1]].file << s;
+	current.file.open("cur.txt", ios::binary | ios::in);
+	while (!current.file.eof())
+	{
+		STRYCT s;
+		current.file.read((char*)&s, sizeof(STRYCT));
+		seqs[t[n - 1]].file.write((char*)&s, sizeof(STRYCT));
+	}
 
 	current.Close();
 	remove("cur.txt");
@@ -312,6 +348,7 @@ void MergeK(Sequence* seqs, int n, int* distribute, int* t, int k)
 	}
 }
 
+/*
 void copy_Kser(Sequence& s1, Sequence& s2)
 {
 	s2.StartWrite("f2.txt");
@@ -319,7 +356,7 @@ void copy_Kser(Sequence& s1, Sequence& s2)
 	{
 		s2.CopyRun(s1);
 	}
-}
+}*/
 
 void reverse_arr(int* a, int n)
 {
@@ -345,7 +382,7 @@ void CascadeMerge(Sequence* seqs, int n, int* distribute)
 	{
 		t[i] = i;
 	}
-	while (distribute[0] != 1)
+	while (distribute[0] > 1)
 	{
 		for (int i = 0; i < n - 1; i++)
 		{
@@ -353,14 +390,18 @@ void CascadeMerge(Sequence* seqs, int n, int* distribute)
 		}
 		for (int i = n; i > 2; i--)
 		{
-			seqs[t[i - 1]].file.open("f" + to_string(t[i - 1] + 1) + ".txt", ios::out);
+			seqs[t[i - 1]].file.open("f" + to_string(t[i - 1] + 1) + ".txt", ios::binary | ios::out);
 			MergeK(seqs, i, distribute, t, distribute[i - 2]);
 			print_arr(distribute, n);
 			string path = "f" + to_string(t[i - 2] + 1) + ".txt";
 			seqs[t[i - 2]].StartWrite(path);
 			seqs[t[i - 2]].Close();
 		}
-		copy_Kser(seqs[t[0]], seqs[t[1]]);
+		seqs[t[1]].StartWrite("f" + to_string(t[1] + 1) + ".txt");
+		while (!seqs[t[0]].eof)
+		{
+			seqs[t[1]].CopyRun(seqs[t[0]]);
+		}
 		seqs[t[0]].Close();
 		string path = "f" + to_string(t[0] + 1) + ".txt";
 		remove(path.c_str());
@@ -387,19 +428,24 @@ void CascadeMerge(Sequence* seqs, int n, int* distribute)
 	{
 		seqs[t[i]].StartRead("f" + to_string(t[i] + 1) + ".txt");
 	}
-	seqs[t[n - 1]].file.open("f" + to_string(t[n - 1] + 1) + ".txt", ios::out);
+	seqs[t[n - 1]].file.open("f" + to_string(t[n - 1] + 1) + ".txt", ios::binary | ios::out);
 	MergeK(seqs, n, distribute, t, 1);
 	for (int i = 0; i < n; i++)
 	{
 		seqs[t[i]].Close();
 	}
 
-	fstream result_file("result.txt", ios::out);
+	fstream result_file("result.txt", ios::out); //Не бинарный!
 	string result_string;
 	seqs[t[n - 1]].file.open("f" + to_string(t[n - 1] + 1) + ".txt");
-	getline(seqs[t[n - 1]].file, result_string);
-	int k = result_string.find(to_string(INT_MAX));
-	result_string = result_string.substr(0, k);
+	while (!seqs[t[n - 1]].file.eof())
+	{
+		STRYCT s;
+		seqs[t[n - 1]].file.read((char*)&s, sizeof(STRYCT));
+		result_string += to_string(s.i) + '[' + s.c + "] ";
+	}
+	//int k = result_string.find(to_string(INT_MAX));
+	//result_string = result_string.substr(0, k);
 	result_file << result_string;
 	print_arr(distribute, n);
 	print_arr(t, n);
@@ -415,7 +461,7 @@ void CascadeSort(string name)
 	fstream* files = new fstream[n];
 	for (int i = 0; i < n; i++)
 	{
-		files[i].open("f" + to_string(i + 1) + ".txt", ios::out);
+		files[i].open("f" + to_string(i + 1) + ".txt", ios::binary | ios::out);
 	}
 	int* final_arr = new int[n];
 	Sequence* seqs = new Sequence[n];
