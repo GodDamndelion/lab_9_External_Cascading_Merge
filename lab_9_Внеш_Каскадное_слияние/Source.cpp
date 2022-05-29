@@ -3,9 +3,6 @@
 #include <ctime>
 #include <string>
 
-//Переименовка
-//Красивый алгоритм
-
 using namespace std;
 
 struct STRYCT
@@ -31,27 +28,32 @@ struct Sequence
 	void Close();
 	void Copy(Sequence& x);
 	void CopyRun(Sequence& x);
-	int CountSeries();
+	int CountSeries(); //Добавлено для начальной цифры (и для distr)
 };
 
-void CreateFile_(std::string filename);
+void randomize_file(std::ofstream& file);
 int sum_arr(int* a, int n);
 void print_arr(int* a, int n);
 void reverse_arr(int* a, int n);
 
-void distribution(string name, fstream*& files, Sequence*& seqs, int* final_arr, int n);
-void MergeUnit(Sequence& f0, Sequence& f1, Sequence& f2);
-void MergeOne(Sequence* seqs, int n, int* distribute, int* t);
-void MergeK(Sequence* seqs, int n, int* distribute, int* t, int k);
-void CascadeMerge(Sequence* seqs, int n, int* distribute);
-void CascadeSort(string name);
-void RemoveFiles();
+void allocation(string name, fstream*& files, Sequence*& seqs, int* final_arr, int n);
+void merge(Sequence& f0, Sequence& f1, Sequence& f2);
+void merge_once(Sequence* seqs, int n, int* allocations, int* t);
+void cycle_of_merge(Sequence* seqs, int n, int* allocations, int* t, int k);
+void mega_merge(Sequence* seqs, int n, int* allocations);
+void cascade_sort(string name);
+void remove_files();
 
 int main()
 {
-	CreateFile_("f0.txt");
-	CascadeSort("f0.txt");
-	RemoveFiles();
+	//SetConsoleOutputCP(1251);
+	//SetConsoleCP(1251);
+	string filename = "original_file.txt";
+	std::ofstream original_file(filename, ios::binary);
+	randomize_file(original_file);
+	original_file.close();
+	cascade_sort(filename);
+	remove_files();
 
 	cin.get();
 	return 0;
@@ -127,9 +129,8 @@ int Sequence::CountSeries()
 	return counter;
 }
 
-void CreateFile_(std::string filename)
+void randomize_file(std::ofstream& file)
 {
-	std::ofstream file(filename, ios::binary);
 	srand(time(0));
 	int i;
 	char c;
@@ -149,7 +150,6 @@ void CreateFile_(std::string filename)
 		//cout << s.i << '[' << s.c << "] ";
 	}
 	//cout << '\n';
-	file.close();
 }
 int sum_arr(int* a, int n)
 {
@@ -195,7 +195,7 @@ void copy(int*& a, int* b, int n)
 }
 */
 
-void distribution(string name, fstream*& files, Sequence*& seqs, int* final_arr, int n)
+void allocation(string name, fstream*& files, Sequence*& seqs, int* final_arr, int n)
 {
 	Sequence f0;
 	f0.StartRead(name);
@@ -288,7 +288,7 @@ void distribution(string name, fstream*& files, Sequence*& seqs, int* final_arr,
 	print_arr(final_arr, n);
 	cout << endl;
 }
-void MergeUnit(Sequence& f0, Sequence& f1, Sequence& f2)
+void merge(Sequence& f0, Sequence& f1, Sequence& f2)
 {
 	//cout << '\n';
 	while (!f1.eor && !f2.eor)
@@ -314,82 +314,82 @@ void MergeUnit(Sequence& f0, Sequence& f1, Sequence& f2)
 	}
 	//cout << '\n';
 }
-void MergeOne(Sequence* seqs, int n, int* distribute, int* t)
+void merge_once(Sequence* seqs, int n, int* allocations, int* t)
 {
 
 	//cout << endl;
-	Sequence current;
-	current.StartWrite("cur.txt");
+	Sequence tmp;
+	tmp.StartWrite("tmp.txt");
 	int p = n;
-	MergeUnit(current, seqs[t[0]], seqs[t[1]]);
-	distribute[0]--;
-	distribute[1]--;
-	Sequence sec_cur;
-	current.Close();
+	merge(tmp, seqs[t[0]], seqs[t[1]]);
+	allocations[0]--;
+	allocations[1]--;
+	Sequence tmp2;
+	tmp.Close();
 	for (int i = 2; i < p - 1; i++)
 	{
-		sec_cur.StartWrite("sec_cur.txt");
-		current.StartRead("cur.txt");
-		MergeUnit(sec_cur, current, seqs[t[i]]);
+		tmp2.StartWrite("tmp2.txt");
+		tmp.StartRead("tmp.txt");
+		merge(tmp2, tmp, seqs[t[i]]);
 
-		sec_cur.Close();
-		current.Close();
+		tmp2.Close();
+		tmp.Close();
 
-		remove("cur.txt");
-		sec_cur.StartRead("sec_cur.txt");
-		current.StartWrite("cur.txt");
+		remove("tmp.txt");
+		tmp2.StartRead("tmp2.txt");
+		tmp.StartWrite("tmp.txt");
 
-		while (!sec_cur.eof)
+		while (!tmp2.eof)
 		{
-			current.CopyRun(sec_cur);
+			tmp.CopyRun(tmp2);
 		}
-		current.Close();
-		sec_cur.Close();
-		remove("sec_cur.txt");
-		distribute[i]--;
+		tmp.Close();
+		tmp2.Close();
+		remove("tmp2.txt");
+		allocations[i]--;
 	}
 
-	//current.file.open("cur.txt", ios::binary | ios::in);
+	//tmp.file.open("tmp.txt", ios::binary | ios::in);
 
-	//while (!current.file.eof())
+	//while (!tmp.file.eof())
 	//{
 	//	STRYCT s;
-	//	current.file.read((char*)&s, sizeof s);
+	//	tmp.file.read((char*)&s, sizeof s);
 	//	seqs[t[n - 1]].file.write((char*)&s, sizeof s);
 	//}
 
 	//cout << '\n';
-	current.StartRead("cur.txt");
-	while (!current.eof)
+	tmp.StartRead("tmp.txt");
+	while (!tmp.eof)
 	{
-		seqs[t[n - 1]].CopyRun(current);
+		seqs[t[n - 1]].CopyRun(tmp);
 	}
 
-	current.Close();
-	remove("cur.txt");
-	distribute[p - 1]++;
+	tmp.Close();
+	remove("tmp.txt");
+	allocations[p - 1]++;
 	//cout << endl << endl;
-	//print_arr(distribute, n);
+	//print_arr(allocations, n);
 }
-void MergeK(Sequence* seqs, int n, int* distribute, int* t, int k)
+void cycle_of_merge(Sequence* seqs, int n, int* allocations, int* t, int k)
 {
 	for (int i = 0; i < k; i++)
 	{
-		MergeOne(seqs, n, distribute, t);
+		merge_once(seqs, n, allocations, t);
 		for (int i = 0; i < n; i++)
 		{
 			seqs[t[i]].eor = false;
 		}
 	}
 }
-void CascadeMerge(Sequence* seqs, int n, int* distribute)
+void mega_merge(Sequence* seqs, int n, int* allocations)
 {
 	int* t = new int[n];
 	for (int i = 0; i < n; i++)
 	{
 		t[i] = i;
 	}
-	while (distribute[0] > 1)
+	while (allocations[0] > 1)
 	{
 		for (int i = 0; i < n - 1; i++)
 		{
@@ -398,9 +398,9 @@ void CascadeMerge(Sequence* seqs, int n, int* distribute)
 		for (int i = n; i > 2; i--)
 		{
 			seqs[t[i - 1]].file.open("f" + to_string(t[i - 1] + 1) + ".txt", ios::binary | ios::out);
-			MergeK(seqs, i, distribute, t, distribute[i - 2]);
+			cycle_of_merge(seqs, i, allocations, t, allocations[i - 2]);
 			//cout << '\n';
-			print_arr(distribute, n);
+			print_arr(allocations, n);
 			string path = "f" + to_string(t[i - 2] + 1) + ".txt";
 			seqs[t[i - 2]].StartWrite(path);
 			seqs[t[i - 2]].Close();
@@ -417,8 +417,8 @@ void CascadeMerge(Sequence* seqs, int n, int* distribute)
 		remove(path.c_str());
 		seqs[t[0]].StartWrite(path);
 		seqs[t[0]].Close();
-		distribute[1] += distribute[0];
-		distribute[0] = 0;
+		allocations[1] += allocations[0];
+		allocations[0] = 0;
 
 		for (int i = 0; i < n; i++)
 		{
@@ -426,8 +426,8 @@ void CascadeMerge(Sequence* seqs, int n, int* distribute)
 		}
 
 		reverse_arr(t, n);
-		reverse_arr(distribute, n);
-		print_arr(distribute, n);
+		reverse_arr(allocations, n);
+		print_arr(allocations, n);
 		//print_arr(t, n);
 		for (int i = 0; i < n; i++)
 		{
@@ -439,7 +439,7 @@ void CascadeMerge(Sequence* seqs, int n, int* distribute)
 		seqs[t[i]].StartRead("f" + to_string(t[i] + 1) + ".txt");
 	}
 	seqs[t[n - 1]].file.open("f" + to_string(t[n - 1] + 1) + ".txt", ios::binary | ios::out);
-	MergeK(seqs, n, distribute, t, 1);
+	cycle_of_merge(seqs, n, allocations, t, 1);
 	for (int i = 0; i < n; i++)
 	{
 		seqs[t[i]].Close();
@@ -474,16 +474,16 @@ void CascadeMerge(Sequence* seqs, int n, int* distribute)
 	}
 	//cout << '\n';
 
-	//current.StartRead("cur.txt");
-	//while (!current.eof)
+	//tmp.StartRead("tmp.txt");
+	//while (!tmp.eof)
 	//{
-	//	seqs[t[n - 1]].CopyRun(current);
+	//	seqs[t[n - 1]].CopyRun(tmp);
 	//}
 
 	int k = result_string.find(to_string(INT_MAX));
 	result_string = result_string.substr(0, k);
 	result_file << result_string;
-	print_arr(distribute, n);
+	print_arr(allocations, n);
 	//print_arr(t, n);
 	for (int i = 0; i < n; i++)
 	{
@@ -491,7 +491,7 @@ void CascadeMerge(Sequence* seqs, int n, int* distribute)
 	}
 	cout << "\n" << result_string << "\n";
 }
-void CascadeSort(string name)
+void cascade_sort(string name)
 {
 	fstream* files = new fstream[n];
 	for (int i = 0; i < n; i++)
@@ -500,20 +500,20 @@ void CascadeSort(string name)
 	}
 	int* final_arr = new int[n];
 	Sequence* seqs = new Sequence[n];
-	distribution(name, files, seqs, final_arr, n);
+	allocation(name, files, seqs, final_arr, n);
 	int* t = new int[n];
 	for (int i = 0; i < n; i++)
 	{
 		t[i] = i;
 	}
-	CascadeMerge(seqs, n, final_arr);
+	mega_merge(seqs, n, final_arr);
 	for (int i = 0; i < n; i++)
 	{
 		seqs[t[i]].Close();
 	}
 	delete[]files;
 }
-void RemoveFiles()
+void remove_files()
 {
 	for (int i = 0; i < n; i++)
 	{
