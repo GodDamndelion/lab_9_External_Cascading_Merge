@@ -207,35 +207,27 @@ void allocation(string name, fstream*& files, Sequence*& seqs, int* final_arr, i
 	f0.Close();
 	f0.StartRead(name);
 	cout << k << endl << endl;
-	int* a1 = new int[n];
-	int* a2 = new int[n];
+	int* a = new int[n];
 	for (int i = 0; i < n - 1; i++)
 	{
-		a1[i] = 0;
-		a2[i] = 1;
+		a[i] = 1;
 	}
-	a1[0] = 1;
-	a1[n - 1] = 0;
-	a2[n - 1] = 0;
+	a[n - 1] = 0;
 
-	while (sum_arr(a2, n - 1) < k)
+	while (sum_arr(a, n - 1) < k)
 	{
 		int* b = new int[n];
 		for (int i = 0; i < n; i++)
 		{
-			b[i] = a2[i];
+			b[i] = a[i];
 		}
 		for (int i = 0; i < n - 1; i++)
 		{
-			a2[i] = sum_arr(a1, n - i - 1);
-		}
-		for (int i = 0; i < n; i++)
-		{
-			a1[i] = b[i];
+			a[i] = sum_arr(b, n - i - 1);
 		}
 	}
-	//print_arr(a2, n);
-	if (sum_arr(a2, n - 1) == k)
+	//print_arr(a, n);
+	if (sum_arr(a, n - 1) == k)
 	{
 		for (int i = 0; i < n; i++)
 		{
@@ -244,7 +236,7 @@ void allocation(string name, fstream*& files, Sequence*& seqs, int* final_arr, i
 		for (int i = 0; i < n; i++)
 		{
 			int counter = 0;
-			while (!f0.file.eof() && counter != a2[i])
+			while (!f0.file.eof() && counter != a[i])
 			{
 				seqs[i].CopyRun(f0);
 				++final_arr[i];
@@ -261,7 +253,7 @@ void allocation(string name, fstream*& files, Sequence*& seqs, int* final_arr, i
 		for (int i = 0; i < n; i++)
 		{
 			int counter = 0;
-			while (!f0.file.eof() && counter != a2[i])
+			while (!f0.file.eof() && counter != a[i])
 			{
 				seqs[i].CopyRun(f0);
 				++final_arr[i];
@@ -270,7 +262,7 @@ void allocation(string name, fstream*& files, Sequence*& seqs, int* final_arr, i
 		}
 		for (int i = 0; i < n - 1; i++)
 		{
-			while (final_arr[i] != a2[i])
+			while (final_arr[i] != a[i])
 			{
 				++final_arr[i];
 				STRYCT s;
@@ -429,10 +421,6 @@ void mega_merge(Sequence* seqs, int n, int* allocations)
 		reverse_arr(allocations, n);
 		print_arr(allocations, n);
 		//print_arr(t, n);
-		for (int i = 0; i < n; i++)
-		{
-			seqs[t[i]].Close();
-		}
 	}
 	for (int i = 0; i < n - 1; i++)
 	{
@@ -464,8 +452,8 @@ void mega_merge(Sequence* seqs, int n, int* allocations)
 		{
 			if (!seqs[t[n - 1]].file.eof())
 			{
-				s = seqs[t[n - 1]].elem;
-				result_string += to_string(s.i) + '[' + s.c + "] ";
+				s = seqs[t[n - 1]].elem; /////////////
+				result_string += to_string(s.i) + '[' + s.c + "] "; //////
 				//cout << s.i << '[' << s.c << "] ";
 			}
 			seqs[t[n - 1]].ReadNext();
