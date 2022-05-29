@@ -10,7 +10,7 @@ struct STRYCT
 };
 
 const int n = 6;
-const int count_of_elements = 10;
+const int count_of_elements = 1000;
 
 struct Sequence
 {
@@ -81,12 +81,12 @@ void CreateFile_(std::string filename)
 	srand(time(0));
 	//
 	//int a[count_of_elements] = { 21, -65, 41, 53, -61, -26, 70, 25, 96, 4 };
-	int a[count_of_elements] = { -66, 4, -13, 99, -7, -79, 77, 10, 11, -26 };
+	//int a[count_of_elements] = { -66, 4, -13, 99, -7, -79, 77, 10, 11, -26 };
 	//
 	for (int i = 0; i < count_of_elements; i++)
 	{
-		//file << rand() % 201 - 100 << ' ';
-		file << a[i] << ' ';
+		file << rand() % 201 - 100 << ' ';
+		//file << a[i] << ' ';
 	}
 	file.close();
 }

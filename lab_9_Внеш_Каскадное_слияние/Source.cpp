@@ -3,6 +3,9 @@
 #include <ctime>
 #include <string>
 
+//Красивая расстановка
+//Красивый алгоритм
+
 using namespace std;
 
 struct STRYCT
@@ -30,7 +33,7 @@ bool STRYCT::operator<=(const STRYCT& obj)
 }
 
 const int n = 6;
-const int count_of_elements = 10;
+const int count_of_elements = 1000;
 
 struct Sequence
 {
@@ -67,7 +70,7 @@ struct Sequence
 		{
 			elem = x.elem;
 			file.write((char*)&elem, sizeof elem);
-			cout << elem.i << '[' << elem.c << "] ";
+			//cout << elem.i << '[' << elem.c << "] ";
 		}
 		x.ReadNext();
 		x.eor = x.eof || x.elem < elem;
@@ -118,9 +121,9 @@ void CreateFile_(std::string filename)
 		s.i = i;
 		s.c = c;
 		file.write((char*)&s, sizeof s);
-		cout << s.i << '[' << s.c << "] ";
+		//cout << s.i << '[' << s.c << "] ";
 	}
-	cout << '\n';
+	//cout << '\n';
 	file.close();
 }
 
@@ -157,9 +160,9 @@ void print_arr(int* a, int n)
 {
 	for (int i = 0; i < n; i++)
 	{
-		cout << a[i] << '\t';
+		cout << a[i] << ' ';
 	}
-	cout << endl;
+	cout << '\n';
 }
 void copy(int*& a, int* b, int n)
 {
@@ -210,7 +213,7 @@ void distribution(string name, fstream*& files, Sequence*& seqs, int* final_arr,
 			a1[i] = b[i];
 		}
 	}
-	print_arr(a2, n);
+	//print_arr(a2, n);
 	if (sum_arr(a2, n - 1) == k)
 	{
 		for (int i = 0; i < n; i++)
@@ -270,7 +273,7 @@ void distribution(string name, fstream*& files, Sequence*& seqs, int* final_arr,
 
 void MergeUnit(Sequence& f0, Sequence& f1, Sequence& f2)
 {
-	cout << '\n';
+	//cout << '\n';
 	while (!f1.eor && !f2.eor)
 	{
 		if (f1.elem <= f2.elem)
@@ -292,13 +295,13 @@ void MergeUnit(Sequence& f0, Sequence& f1, Sequence& f2)
 	{
 		f0.CopyRun(f2);
 	}
-	cout << '\n';
+	//cout << '\n';
 }
 
 void MergeOne(Sequence* seqs, int n, int* distribute, int* t)
 {
 
-	cout << endl;
+	//cout << endl;
 	Sequence current;
 	current.StartWrite("cur.txt");
 	int p = n;
@@ -339,7 +342,7 @@ void MergeOne(Sequence* seqs, int n, int* distribute, int* t)
 	//	seqs[t[n - 1]].file.write((char*)&s, sizeof s);
 	//}
 
-	cout << '\n';
+	//cout << '\n';
 	current.StartRead("cur.txt");
 	while (!current.eof)
 	{
@@ -349,8 +352,8 @@ void MergeOne(Sequence* seqs, int n, int* distribute, int* t)
 	current.Close();
 	remove("cur.txt");
 	distribute[p - 1]++;
-	cout << endl << endl;
-	print_arr(distribute, n);
+	//cout << endl << endl;
+	//print_arr(distribute, n);
 }
 
 
@@ -411,7 +414,7 @@ void CascadeMerge(Sequence* seqs, int n, int* distribute)
 		{
 			seqs[t[i - 1]].file.open("f" + to_string(t[i - 1] + 1) + ".txt", ios::binary | ios::out);
 			MergeK(seqs, i, distribute, t, distribute[i - 2]);
-			cout << '\n';
+			//cout << '\n';
 			print_arr(distribute, n);
 			string path = "f" + to_string(t[i - 2] + 1) + ".txt";
 			seqs[t[i - 2]].StartWrite(path);
@@ -440,7 +443,7 @@ void CascadeMerge(Sequence* seqs, int n, int* distribute)
 		reverse_arr(t, n);
 		reverse_arr(distribute, n);
 		print_arr(distribute, n);
-		print_arr(t, n);
+		//print_arr(t, n);
 		for (int i = 0; i < n; i++)
 		{
 			seqs[t[i]].Close();
@@ -478,13 +481,13 @@ void CascadeMerge(Sequence* seqs, int n, int* distribute)
 			{
 				s = seqs[t[n - 1]].elem;
 				result_string += to_string(s.i) + '[' + s.c + "] ";
-				cout << s.i << '[' << s.c << "] ";
+				//cout << s.i << '[' << s.c << "] ";
 			}
 			seqs[t[n - 1]].ReadNext();
 			seqs[t[n - 1]].eor = seqs[t[n - 1]].eof || seqs[t[n - 1]].elem < s;
 		} while (!seqs[t[n - 1]].eor);
 	}
-	cout << '\n';
+	//cout << '\n';
 
 	//current.StartRead("cur.txt");
 	//while (!current.eof)
@@ -496,7 +499,7 @@ void CascadeMerge(Sequence* seqs, int n, int* distribute)
 	result_string = result_string.substr(0, k);
 	result_file << result_string;
 	print_arr(distribute, n);
-	print_arr(t, n);
+	//print_arr(t, n);
 	for (int i = 0; i < n; i++)
 	{
 		seqs[t[i]].Close();
