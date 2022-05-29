@@ -3,7 +3,7 @@
 #include <ctime>
 #include <string>
 
-//Красивая расстановка
+//Переименовка
 //Красивый алгоритм
 
 using namespace std;
@@ -17,21 +17,6 @@ struct STRYCT
 	bool operator<=(const STRYCT& obj);
 };
 
-bool STRYCT::operator>(const STRYCT& obj)
-{
-	return i > obj.i || (i == obj.i && c > obj.c);
-}
-
-bool STRYCT::operator<(const STRYCT& obj)
-{
-	return i < obj.i || (i == obj.i && c < obj.c);
-}
-
-bool STRYCT::operator<=(const STRYCT& obj)
-{
-	return i < obj.i || (i == obj.i && c <= obj.c);
-}
-
 const int n = 6;
 const int count_of_elements = 1000;
 
@@ -40,67 +25,107 @@ struct Sequence
 	std::fstream file;
 	STRYCT elem;
 	bool eof, eor;
-	void ReadNext()
-	{
-		eof = file.eof();
-		if (!eof)
-		{
-			file.read((char*)&elem, sizeof elem);
-		}
-	}
-	void StartRead(std::string filename)
-	{
-		file.open(filename, ios::binary | std::ios::in);
-		ReadNext();
-		eor = eof;
-	}
-	void StartWrite(std::string filename)
-	{
-		file.open(filename, ios::binary | std::ios::out);
-	}
+	void ReadNext();
+	void StartRead(std::string filename);
+	void StartWrite(std::string filename);
+	void Close();
+	void Copy(Sequence& x);
+	void CopyRun(Sequence& x);
+	int CountSeries();
+};
 
-	void Close()
-	{
-		file.close();
-	}
+void CreateFile_(std::string filename);
+int sum_arr(int* a, int n);
+void print_arr(int* a, int n);
+void reverse_arr(int* a, int n);
 
-	void Copy(Sequence& x)
+void distribution(string name, fstream*& files, Sequence*& seqs, int* final_arr, int n);
+void MergeUnit(Sequence& f0, Sequence& f1, Sequence& f2);
+void MergeOne(Sequence* seqs, int n, int* distribute, int* t);
+void MergeK(Sequence* seqs, int n, int* distribute, int* t, int k);
+void CascadeMerge(Sequence* seqs, int n, int* distribute);
+void CascadeSort(string name);
+void RemoveFiles();
+
+int main()
+{
+	CreateFile_("f0.txt");
+	CascadeSort("f0.txt");
+	RemoveFiles();
+
+	cin.get();
+	return 0;
+}
+
+//================================================================
+
+bool STRYCT::operator>(const STRYCT& obj)
+{
+	return i > obj.i || (i == obj.i && c > obj.c);
+}
+bool STRYCT::operator<(const STRYCT& obj)
+{
+	return i < obj.i || (i == obj.i && c < obj.c);
+}
+bool STRYCT::operator<=(const STRYCT& obj)
+{
+	return i < obj.i || (i == obj.i && c <= obj.c);
+}
+void Sequence::ReadNext()
+{
+	eof = file.eof();
+	if (!eof)
 	{
-		if (!x.file.eof())
-		{
-			elem = x.elem;
-			file.write((char*)&elem, sizeof elem);
-			//cout << elem.i << '[' << elem.c << "] ";
-		}
-		x.ReadNext();
-		x.eor = x.eof || x.elem < elem;
+		file.read((char*)&elem, sizeof elem);
 	}
-	void CopyRun(Sequence& x)
+}
+void Sequence::StartRead(std::string filename)
+{
+	file.open(filename, ios::binary | std::ios::in);
+	ReadNext();
+	eor = eof;
+}
+void Sequence::StartWrite(std::string filename)
+{
+	file.open(filename, ios::binary | std::ios::out);
+}
+void Sequence::Close()
+{
+	file.close();
+}
+void Sequence::Copy(Sequence& x)
+{
+	if (!x.file.eof())
+	{
+		elem = x.elem;
+		file.write((char*)&elem, sizeof elem);
+		//cout << elem.i << '[' << elem.c << "] ";
+	}
+	x.ReadNext();
+	x.eor = x.eof || x.elem < elem;
+}
+void Sequence::CopyRun(Sequence& x)
+{
+	do
+	{
+		Copy(x);
+	} while (!x.eor);
+}
+int Sequence::CountSeries()
+{
+	int counter = 0;
+	while (!eof)
 	{
 		do
 		{
-			Copy(x);
-		} while (!x.eor);
+			STRYCT elem1 = elem;
+			ReadNext();
+			eor = eof || elem < elem1;
+		} while (!eor);
+		counter++;
 	}
-
-	int CountSeries()
-	{
-		int counter = 0;
-		while (!eof)
-		{
-			do
-			{
-				STRYCT elem1 = elem;
-				ReadNext();
-				eor = eof || elem < elem1;
-			} while (!eor);
-			counter++;
-		}
-		return counter;
-	}
-};
-
-
+	return counter;
+}
 
 void CreateFile_(std::string filename)
 {
@@ -126,26 +151,6 @@ void CreateFile_(std::string filename)
 	//cout << '\n';
 	file.close();
 }
-
-/*bool CheckFile(std::string filename)
-{
-	std::ifstream file(filename);
-	int x, y;
-	bool check = true;
-	file >> y;
-	while (!file.eof() && check)
-	{
-		x = y;
-		file >> y;
-		check = x <= y;
-	}
-	file.close();
-	return check;
-}*/
-
-
-//=======================================
-
 int sum_arr(int* a, int n)
 {
 	int sum = 0;
@@ -155,7 +160,6 @@ int sum_arr(int* a, int n)
 	}
 	return sum;
 }
-
 void print_arr(int* a, int n)
 {
 	for (int i = 0; i < n; i++)
@@ -164,6 +168,24 @@ void print_arr(int* a, int n)
 	}
 	cout << '\n';
 }
+void reverse_arr(int* a, int n)
+{
+	if (n % 2 == 0)
+	{
+		for (int i = 0; i <= (n - 1) / 2; i++)
+		{
+			swap(a[i], a[n - i - 1]);
+		}
+	}
+	else
+	{
+		for (int i = 0; i <= n / 2; i++)
+		{
+			swap(a[i], a[n - i - 1]);
+		}
+	}
+}
+/*
 void copy(int*& a, int* b, int n)
 {
 	for (int i = 0; i < n; i++)
@@ -171,8 +193,7 @@ void copy(int*& a, int* b, int n)
 		a[i] = b[i];
 	}
 }
-
-//=================================================
+*/
 
 void distribution(string name, fstream*& files, Sequence*& seqs, int* final_arr, int n)
 {
@@ -267,10 +288,6 @@ void distribution(string name, fstream*& files, Sequence*& seqs, int* final_arr,
 	print_arr(final_arr, n);
 	cout << endl;
 }
-
-
-
-
 void MergeUnit(Sequence& f0, Sequence& f1, Sequence& f2)
 {
 	//cout << '\n';
@@ -297,7 +314,6 @@ void MergeUnit(Sequence& f0, Sequence& f1, Sequence& f2)
 	}
 	//cout << '\n';
 }
-
 void MergeOne(Sequence* seqs, int n, int* distribute, int* t)
 {
 
@@ -334,7 +350,7 @@ void MergeOne(Sequence* seqs, int n, int* distribute, int* t)
 	}
 
 	//current.file.open("cur.txt", ios::binary | ios::in);
-	
+
 	//while (!current.file.eof())
 	//{
 	//	STRYCT s;
@@ -355,8 +371,6 @@ void MergeOne(Sequence* seqs, int n, int* distribute, int* t)
 	//cout << endl << endl;
 	//print_arr(distribute, n);
 }
-
-
 void MergeK(Sequence* seqs, int n, int* distribute, int* t, int k)
 {
 	for (int i = 0; i < k; i++)
@@ -365,35 +379,6 @@ void MergeK(Sequence* seqs, int n, int* distribute, int* t, int k)
 		for (int i = 0; i < n; i++)
 		{
 			seqs[t[i]].eor = false;
-		}
-	}
-}
-
-/*
-void copy_Kser(Sequence& s1, Sequence& s2)
-{
-	s2.StartWrite("f2.txt");
-	while (!s1.eof)
-	{
-		s2.CopyRun(s1);
-	}
-}
-*/
-
-void reverse_arr(int* a, int n)
-{
-	if (n % 2 == 0)
-	{
-		for (int i = 0; i <= (n - 1) / 2; i++)
-		{
-			swap(a[i], a[n - i - 1]);
-		}
-	}
-	else
-	{
-		for (int i = 0; i <= n / 2; i++)
-		{
-			swap(a[i], a[n - i - 1]);
 		}
 	}
 }
@@ -506,7 +491,6 @@ void CascadeMerge(Sequence* seqs, int n, int* distribute)
 	}
 	cout << "\n" << result_string << "\n";
 }
-
 void CascadeSort(string name)
 {
 	fstream* files = new fstream[n];
@@ -529,7 +513,6 @@ void CascadeSort(string name)
 	}
 	delete[]files;
 }
-
 void RemoveFiles()
 {
 	for (int i = 0; i < n; i++)
@@ -537,14 +520,4 @@ void RemoveFiles()
 		string path = ("f" + to_string(i + 1) + ".txt");
 		remove(path.c_str());
 	}
-}
-
-int main()
-{
-	CreateFile_("f0.txt");
-	CascadeSort("f0.txt");
-	RemoveFiles();
-
-	cin.get();
-	return 0;
 }
